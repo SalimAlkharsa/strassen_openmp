@@ -1,7 +1,16 @@
-# Default compiler and flags (Linux)
-CC = g++
-CFLAGS = -O2 -fopenmp -std=c++11
-LDFLAGS =
+# Set default platform to Linux (HPC)
+platform ?= linux
+
+# Platform-specific flags
+ifeq ($(platform), mac)
+    CC = clang++
+    CFLAGS = -O2 -Xpreprocessor -fopenmp -I/opt/homebrew/include -std=c++11
+    LDFLAGS = -L/opt/homebrew/lib -lomp  # OpenMP on macOS
+else  # Default to Linux (HPC)
+    CC = g++
+    CFLAGS = -O2 -fopenmp -std=c++11
+    LDFLAGS = -lgomp  # OpenMP on Linux using libgomp
+endif
 
 SRC_DIR = src
 OBJ_DIR = obj
@@ -11,17 +20,12 @@ TARGET = $(BIN_DIR)/strassen_matrix_multiplication
 SOURCES = $(wildcard $(SRC_DIR)/*.cpp)
 OBJECTS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SOURCES))
 
+# Default target
 all: $(TARGET)
-
-# Mac override
-mac: CC = clang++
-mac: CFLAGS = -O2 -Xpreprocessor -fopenmp -I/opt/homebrew/include -std=c++11
-mac: LDFLAGS = -L/opt/homebrew/lib -lomp
-mac: $(TARGET)
 
 $(TARGET): $(OBJECTS)
 	@mkdir -p $(BIN_DIR)
-	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
+	$(CC) $(OBJECTS) -o $@ $(LDFLAGS)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(OBJ_DIR)
@@ -30,4 +34,4 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR)
 
-.PHONY: all clean mac
+.PHONY: all clean
